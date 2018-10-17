@@ -1,0 +1,79 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<ApplicationManifest xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ApplicationTypeName="SecretsManager" ApplicationTypeVersion="1.0.0" xmlns="http://schemas.microsoft.com/2011/01/fabric" ManifestId="62a2b26f-3309-4703-a76e-54c5ce12918f">
+  <Parameters>
+    <Parameter Name="SecretsManager_PartitionCount" DefaultValue="1" />
+    <Parameter Name="SecretsManager_InstanceCount" DefaultValue="1" />
+    <Parameter Name="LoggingProvider" DefaultValue="MDS" />
+    <Parameter Name="LoggingClusterName" DefaultValue="" />
+    <Parameter Name="LoggingMdmAccountName" DefaultValue="" />
+    <Parameter Name="LoggingLevel" DefaultValue="Warning" />
+    <Parameter Name="KeyVaultEnabled" DefaultValue="True" />
+    <Parameter Name="KeyVaultName" DefaultValue="" />
+    <!--In the context of Secret manager. The keyVault Applciation Id should be of the keyVault writer service principal.-->
+    <Parameter Name="KeyVaultADApplicationId" DefaultValue="" />
+    <Parameter Name="KeyVaultThumbprint" DefaultValue="" />
+    <Parameter Name="PlacementConstraints" DefaultValue="" />
+    <Parameter Name="LoggingStatsdEnabled" DefaultValue="False" />
+    <Parameter Name="LoggingStatsdEndpoint" DefaultValue="" />
+    <!--Secret manager service principal details. The SP is created within MS tenant hence the tenantId is of microsoft which is different from the one in "JwtAuthority" as that is for MobileCenter. It is used to authenticate aganist KeyVault read/Write operation -->
+    <Parameter Name="ClientId" DefaultValue="f448da59-a2ba-4dcf-ab6e-c1b8b8ab31cf" />
+    <Parameter Name="TenantId" DefaultValue="72f988bf-86f1-41af-91ab-2d7cd011db47" />
+    <Parameter Name="Resource" DefaultValue="https://management.azure.com/" />
+    <Parameter Name="SslThumbprint" DefaultValue="" />
+    <!--The below are the details for  API authentication. Hence it uses the mobile center tenantId and audience-->
+    <Parameter Name="AuthenticationEnabled" DefaultValue="True" />
+    <Parameter Name="JwtAuthority" DefaultValue="https://login.windows.net/481f23b0-3fb3-4e76-812d-15513d11dbfc" />
+    <Parameter Name="JwtAudience" DefaultValue="https://apphub.microsoft.com" />
+  </Parameters>
+  <ServiceManifestImport>
+    <ServiceManifestRef ServiceManifestName="SecretsManagerPkg" ServiceManifestVersion="1.0.0" />
+    <ConfigOverrides>
+      <ConfigOverride Name="Config">
+        <Settings>
+          <Section Name="Logging">
+            <Parameter Name="Provider" Value="[LoggingProvider]" />
+            <Parameter Name="ClusterName" Value="[LoggingClusterName]" />
+            <Parameter Name="MdmAccountName" Value="[LoggingMdmAccountName]" />
+            <Parameter Name="LoggingLevel" Value="[LoggingLevel]" />
+            <Parameter Name="StatsdEndpoint" Value="[LoggingStatsdEndpoint]" />
+            <Parameter Name="StatsdEnabled" Value="[LoggingStatsdEnabled]" />
+          </Section>
+          <!--In the context of Secret manager. The keyVault Applciation Id should be of the keyVault writer service principal.-->
+          <Section Name="KeyVault">
+            <Parameter Name="Enabled" Value="[KeyVaultEnabled]" />
+            <Parameter Name="Name" Value="[KeyVaultName]" />
+            <Parameter Name="ADApplicationId" Value="[KeyVaultADApplicationId]" />
+            <Parameter Name="Thumbprint" Value="[KeyVaultThumbprint]" />
+          </Section>
+          <Section Name="SecretManagerAadCreds">
+            <Parameter Name="ClientId" Value="[ClientId]" />
+            <Parameter Name="TenantId" Value="[TenantId]" />
+            <Parameter Name="Resource" Value="[Resource]" />
+          </Section>
+          <Section Name="Authentication">
+            <Parameter Name="Enabled" Value="[AuthenticationEnabled]" />
+            <Parameter Name="JwtAuthority" Value="[JwtAuthority]" />
+            <Parameter Name="JwtAudience" Value="[JwtAudience]" />
+          </Section>
+          <Section Name="Service">
+            <Parameter Name="SslThumbprint" Value="[SslThumbprint]" />
+          </Section>
+        </Settings>
+      </ConfigOverride>
+    </ConfigOverrides>
+    <Policies>
+      <EndpointBindingPolicy EndpointRef="ServiceEndpoint" CertificateRef="SslCertificate" />
+    </Policies>
+  </ServiceManifestImport>
+  <DefaultServices>
+    <Service Name="SecretsManager">
+      <StatelessService ServiceTypeName="SecretsManagerType" InstanceCount="[SecretsManager_InstanceCount]">
+        <UniformInt64Partition PartitionCount="[SecretsManager_PartitionCount]" LowKey="-9223372036854775808" HighKey="9223372036854775807" />
+        <PlacementConstraints>[PlacementConstraints]</PlacementConstraints>
+      </StatelessService>
+    </Service>
+  </DefaultServices>
+  <Certificates>
+    <EndpointCertificate X509FindValue="[SslThumbprint]" Name="SslCertificate" />
+  </Certificates>
+</ApplicationManifest>
